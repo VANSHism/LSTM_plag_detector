@@ -284,6 +284,15 @@ def clear_text():
     st.session_state["last_result"] = None
 
 
+def clear_all_and_rerun():
+    clear_text()
+    # Streamlit renamed experimental_rerun -> rerun; keep both for compatibility.
+    try:
+        st.rerun()
+    except Exception:
+        st.experimental_rerun()
+
+
 
 # Input section with better layout
 col1, col2 = st.columns(2, gap="large")
@@ -320,12 +329,12 @@ with col2:
     predict_button = st.button("🔍 Analyze & Predict", use_container_width=True)
 
 with col3:
-    clear_button = st.button("🔄 Clear All", use_container_width=True, type="secondary")
-
-# Handle clear button
-if clear_button:
-    clear_text()
-    st.rerun()
+    st.button(
+        "🔄 Clear All",
+        use_container_width=True,
+        type="secondary",
+        on_click=clear_all_and_rerun,
+    )
 
 # Handle prediction
 if predict_button:
@@ -401,4 +410,4 @@ if st.session_state["last_result"]:
     # Progress bar
     st.progress(confidence)
     
-    st.markdown("</div>", unsafe_allow_html=True)
+# NOTE: Don't emit a closing </div> unless you also emit the corresponding opening <div>.
