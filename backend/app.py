@@ -8,7 +8,7 @@ from tensorflow.keras.preprocessing.sequence import pad_sequences
 import os
 import logging
 
-from utils.text_preprocess import transform_text
+from backend.utils.text_preprocess import transform_text
 
 import pickle
 from pathlib import Path
