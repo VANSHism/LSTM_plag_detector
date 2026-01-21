@@ -1,0 +1,38 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+.venv/
+venv/
+env/
+ENV/
+build/
+dist/
+*.egg-info/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# OS / Editors
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Streamlit
+.streamlit/secrets.toml
+.streamlit/
+
+# Logs / misc
+*.log
+
+#Data / models (keep committed artifacts below)
+*.csv
+*.tsv
+*.parquet
+*.joblib
+*.pkl
+!backend/model/tokenizer.pkl
+!backend/model/Siamese_LSTM_model.pkl
