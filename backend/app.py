@@ -4,12 +4,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from typing import Annotated
 
-from tensorflow.keras.preprocessing.sequence import pad_sequences
 import os
 import logging
-
-from backend.utils.text_preprocess import transform_text
-
 import pickle
 from pathlib import Path
 
@@ -17,19 +13,23 @@ from pathlib import Path
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# Lazy import TensorFlow to reduce memory footprint at startup
+# Only import when actually needed (in load_model or predict)
+
 BACKEND_DIR = Path(__file__).resolve().parent
 MODEL_DIR = BACKEND_DIR / 'model'
 
-# Lazy loading of model and tokenizer to avoid startup issues
+# Lazy loading of model and tokenizer - DON'T load at startup
 model = None
 tokenizer = None
 
 def load_model():
-    """Load model and tokenizer with error handling."""
+    """Load model and tokenizer with error handling - only when needed."""
     global model, tokenizer
     if model is None or tokenizer is None:
         try:
             logger.info("Loading model and tokenizer...")
+            
             model_path = MODEL_DIR / 'Siamese_LSTM_model.pkl'
             tokenizer_path = MODEL_DIR / 'tokenizer.pkl'
             
@@ -38,19 +38,21 @@ def load_model():
             if not tokenizer_path.exists():
                 raise FileNotFoundError(f"Tokenizer file not found: {tokenizer_path}")
             
-            with open(model_path, 'rb') as f:
-                model = pickle.load(f)
-            
+            # Load with memory-efficient approach
+            logger.info("Loading tokenizer...")
             with open(tokenizer_path, 'rb') as f:
                 tokenizer = pickle.load(f)
+            
+            logger.info("Loading model (this may take a moment)...")
+            with open(model_path, 'rb') as f:
+                model = pickle.load(f)
             
             logger.info("Model and tokenizer loaded successfully")
         except Exception as e:
             logger.error(f"Error loading model/tokenizer: {e}")
             raise
 
-# Load model at startup (but with error handling)
-load_model()
+# DON'T load model at startup - load on first request instead
 
 app = FastAPI()
 
@@ -86,9 +88,13 @@ def health():
 
 @app.post('/predict')
 def predict_plag(data: UserInput):
-    # Ensure model is loaded
+    # Ensure model is loaded (lazy loading on first request)
     if model is None or tokenizer is None:
         load_model()
+    
+    # Import here to avoid loading TensorFlow at startup
+    from tensorflow.keras.preprocessing.sequence import pad_sequences
+    from backend.utils.text_preprocess import transform_text
     
     #Transform text
     src_cleaned = transform_text(data.source_text)
